@@ -14,7 +14,7 @@ The [Obsidian](https://obsidian.md/) Wechat MP Draft  Plugin is an obsidian comm
 
 ## Origianl Plugin
 
-The plugin is based on https://github.com/learnerchen-forever/obsidian-note-to-wechat-mp-plugin, It is a very creative product. 
+The plugin is based on https://github.com/ai-chen2050/obsidian-wechat-public-platform, It is a very creative product. 
 
 For most of authors, integrating too many functionalities in one plugin is confusing. Thus I tried to make it as simple as possible. 
 
