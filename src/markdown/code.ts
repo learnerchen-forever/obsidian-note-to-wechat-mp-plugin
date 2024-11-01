@@ -1,4 +1,4 @@
-import { marked, Renderer, Token, Tokens, Lexer } from "marked";
+import { Token, Tokens } from "marked";
 
 const preReg = /<pre><code[\w\s-="]*>/;
 

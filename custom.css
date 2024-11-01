@@ -33,7 +33,7 @@
    color: #009688;
    margin: 1.2em auto;
    text-align: center;
-   border-bottom: 1px solid #009688;
+   /* border-bottom: 1px solid #009688; */
  }
  
  /* 一级标题内容 */
@@ -47,7 +47,7 @@
    color: #009688;
    padding-left: 10px;
    margin: 1em auto;
-   border-left: 3px solid #009688;
+   /* border-left: 3px solid #009688; */
  }
  
  /* 二级标题内容 */
@@ -60,7 +60,7 @@
  #nice h3 {
    margin: 0.6em auto;
    padding-left: 10px;
-   border-left: 2px solid #009688;
+   /* border-left: 2px solid #009688; */
  }
  
  /* 三级标题内容 */

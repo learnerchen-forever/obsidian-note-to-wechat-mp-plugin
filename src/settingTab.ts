@@ -1,11 +1,9 @@
-import { App, Notice, PluginSettingTab, Setting, TFolder } from "obsidian";
-import WeChatPublic from "../main";
-import { settingsStore } from "./settings";
-import ApiManager from "./api";
+import { App, Notice, PluginSettingTab, Setting } from "obsidian";
 import { get } from "svelte/store";
-import pickBy from "lodash.pickby";
-import { BjhLoginModel } from "./LoginModas";
+import WeChatPublic from "../main";
+import ApiManager from "./api";
 import { buyMeACoffee, commutity, motivation } from "./consts/global";
+import { settingsStore } from "./settings";
 
 export class WeChatPublicSettingTab extends PluginSettingTab {
 	plugin: WeChatPublic;
@@ -23,7 +21,7 @@ export class WeChatPublicSettingTab extends PluginSettingTab {
 
 		containerEl.empty();
 		new Setting(containerEl)
-			.setName("🌈 Wechat public platform")
+			.setName("微信公众号平台")
 			.setHeading();
 		if (
 			get(settingsStore).lastAccessKeyTime + this.expireDuration <
@@ -36,19 +34,7 @@ export class WeChatPublicSettingTab extends PluginSettingTab {
 
 		this.setAppId();
 		this.setSecret();
-		this.setDownloadFolder();
-		this.setBlacklist();
-		this.setNoteLocationFolder();
 		this.downloadCustomCss();
-
-		new Setting(containerEl)
-			.setName("🌎 🌞 Baidu bjh platform 🔍")
-			.setHeading();
-		if (get(settingsStore).BjhCookie === "") {
-			this.showBJHLogin();
-		} else {
-			this.showBJHLogout();
-		}
 
 		this.donation(containerEl);
 	}
@@ -70,7 +56,7 @@ export class WeChatPublicSettingTab extends PluginSettingTab {
 			.setDesc(desc)
 			.addButton((button) => {
 				return button
-					.setButtonText("Clean secret")
+					.setButtonText("清除 secret")
 					.setCta()
 					.onClick(async () => {
 						button.setDisabled(true);
@@ -80,14 +66,14 @@ export class WeChatPublicSettingTab extends PluginSettingTab {
 			})
 			.addButton((button) => {
 				return button
-					.setButtonText("Copy access key")
+					.setButtonText("复制 access key")
 					.setCta()
 					.onClick(async () => {
 						const accesskey = get(settingsStore).accessToken;
 						navigator.clipboard.writeText(accesskey).then(
 							function () {
 								new Notice(
-									"Copy access-key to clipboard succeed!"
+									"复制 access-key 到剪贴板!"
 								);
 							},
 							function (error) {
@@ -108,15 +94,16 @@ export class WeChatPublicSettingTab extends PluginSettingTab {
 		const desc = document
 			.createRange()
 			.createContextualFragment(
-				`Before the test, enter [appid] and [secretkey], and contact the administrator to whitelist your external IP address. https://tool.lu/ip/`
+				// `Before the test, enter [appid] and [secretkey], and contact the administrator to whitelist your external IP address. https://tool.lu/ip/`
+				`测试之前，请输入 [appid] 和 [secretkey], 并把本机公网的IP地址加到微信公众号平台的IP白名单中。这个网址可以检测电脑的公网IP： <a href="https://tool.lu/ip/">https://tool.lu/ip/</a>`
 			);
 
 		new Setting(this.containerEl)
-			.setName("Test the wechat public API")
+			.setName("测试微信公众号 API")
 			.setDesc(desc)
 			.addButton((button) => {
 				return button
-					.setButtonText("Connect")
+					.setButtonText("开始测试")
 					.setCta()
 					.onClick(async () => {
 						button.setDisabled(true);
@@ -130,76 +117,15 @@ export class WeChatPublicSettingTab extends PluginSettingTab {
 			});
 	}
 
-	private showBJHLogin(): void {
-		new Setting(this.containerEl)
-			.setName("Login bjh platform")
-			.addButton((button) => {
-				return button
-					.setButtonText("Login")
-					.setCta()
-					.onClick(async () => {
-						button.setDisabled(true);
-						const loginModel = new BjhLoginModel(this);
-						await loginModel.doLogin();
-						this.display();
-					});
-			});
-	}
-
-	private showBJHLogout(): void {
-		document.createRange().createContextualFragment;
-		const desc = document
-			.createRange()
-			.createContextualFragment(
-				`If you want to clean cookie & exit,please click at clean cookie`
-			);
-
-		new Setting(this.containerEl)
-			.setName(
-				`Bjh platform haved logined: [ ${
-					get(settingsStore).BjhUserName
-				} ]`
-			)
-			.setDesc(desc)
-			.addButton((button) => {
-				return button
-					.setButtonText("Clean cookie")
-					.setCta()
-					.onClick(async () => {
-						button.setDisabled(true);
-						settingsStore.actions.clearBjhCookie();
-						this.display();
-					});
-			})
-			.addButton((button) => {
-				return button
-					.setButtonText("Copy cookie")
-					.setCta()
-					.onClick(async () => {
-						const bjhCookie = get(settingsStore).BjhCookie;
-						navigator.clipboard.writeText(bjhCookie).then(
-							function () {
-								new Notice("Copy cookie to clipboard succeed!");
-							},
-							function (error) {
-								new Notice("Copy cookie to clipboard failed!");
-								console.error(
-									"Copy cookie to clipboard failed!",
-									error
-								);
-							}
-						);
-					});
-			});
-	}
 
 	private setAppId(): void {
 		new Setting(this.containerEl)
-			.setName("Setting appid")
-			.setDesc("wechat public platform account appid")
+			.setName("设置 appid")
+			// .setDesc("wechat public platform account appid")
+			.setDesc("微信公众号平台账号的 appid")
 			.addText((text) =>
 				text
-					.setPlaceholder("Enter your appid")
+					.setPlaceholder("公众号的 appid")
 					.setValue(get(settingsStore).appid)
 					.onChange(async (value) => {
 						settingsStore.actions.setAppId(value);
@@ -209,11 +135,11 @@ export class WeChatPublicSettingTab extends PluginSettingTab {
 
 	private setSecret(): void {
 		new Setting(this.containerEl)
-			.setName("Setting secret")
-			.setDesc("wechat public platform account secret")
+			.setName("设置 secret")
+			.setDesc("微信公众号平台账号的 secret")
 			.addText((text) =>
 				text
-					.setPlaceholder("Enter your secret")
+					.setPlaceholder("公众号的 secret")
 					.setValue(get(settingsStore).secret)
 					.onChange(async (value) => {
 						settingsStore.actions.setSecret(value);
@@ -221,34 +147,34 @@ export class WeChatPublicSettingTab extends PluginSettingTab {
 			);
 	}
 
-	private setNoteLocationFolder(): void {
-		new Setting(this.containerEl)
-			.setName("Note location folder")
-			.setDesc("for future using")
-			.addText((input) => {
-				input
-					.setPlaceholder("ur wechat release folder")
-					.setValue(get(settingsStore).noteLocationFolder)
-					.onChange((value: string) => {
-						settingsStore.actions.setNoteLocationFolder(value);
-					});
-			});
-	}
+	// private setNoteLocationFolder(): void {
+	// 	new Setting(this.containerEl)
+	// 		.setName("Note location folder")
+	// 		.setDesc("for future using")
+	// 		.addText((input) => {
+	// 			input
+	// 				.setPlaceholder("ur wechat release folder")
+	// 				.setValue(get(settingsStore).noteLocationFolder)
+	// 				.onChange((value: string) => {
+	// 					settingsStore.actions.setNoteLocationFolder(value);
+	// 				});
+	// 		});
+	// }
 
 	private downloadCustomCss(): void {
 		new Setting(this.containerEl)
-			.setName("Custom css")
-			.setDesc("Customize article formatting")
+			.setName("定制的 css")
+			.setDesc("自定义文章的排版格式")
 			.addButton((button) => {
-				button.setButtonText("Download");
+				button.setButtonText("下载");
 				button.onClick(async () => {
-					button.setButtonText("Download ...");
+					button.setButtonText("下载中 ...");
 					await this.plugin.apiManager.downloadCustomCss();
-					button.setButtonText("Download Complete");
+					button.setButtonText("下载完成");
 				});
 			})
 			.addButton((button) => {
-				button.setButtonText("Clean");
+				button.setButtonText("清除");
 				button.onClick(async () => {
 					await this.plugin.apiManager.removeCustomCss();
 				});
@@ -261,54 +187,19 @@ export class WeChatPublicSettingTab extends PluginSettingTab {
 			});
 	}
 
-	private setDownloadFolder(): void {
-		new Setting(this.containerEl)
-			.setName("Download folder")
-			.setDesc("Download folder from wechat public")
-			.addDropdown((dropdown) => {
-				const files = this.app.vault.getAllLoadedFiles();
-				const folders = pickBy(files, (val: any) => {
-					return val instanceof TFolder;
-				});
-
-				Object.values(folders).forEach((val: TFolder) => {
-					dropdown.addOption(val.path, val.path);
-				});
-
-				return dropdown
-					.setValue(get(settingsStore).downloadFolder)
-					.onChange(async (value) => {
-						settingsStore.actions.setDownloadFolder(value);
-					});
-			});
-	}
-
-	private setBlacklist(): void {
-		new Setting(this.containerEl)
-			.setName("Blacklist")
-			.setDesc("Prohibit upload folders, use comma apart")
-			.addText((input) => {
-				input
-					.setPlaceholder("/self,/key,/secret")
-					.setValue(get(settingsStore).BlacklistFolder)
-					.onChange((value: string) => {
-						settingsStore.actions.setBlacklistFolder(value);
-					});
-			});
-	}
 
 	private donation(containerEl: HTMLElement): void {
 		new Setting(containerEl)
-			.setName("💰 Support & Funding 💰")
+			.setName("💰 支持与资助 💰")
 			.setHeading();
 		containerEl.createEl("br");
 		let div = containerEl.createEl("div");
 
-		const donateText = document.createElement("p");
-		donateText.appendText(
-			"If this plugin adds value for you and you would like to help support " +
-				"continued development, please use the buttons below:"
-		);
+		const donateText = document.createElement("div");
+		div.innerHTML = 
+		// donateText.appendText(
+			`本插件只是对原插件<a href="https://github.com/ai-chen2050/obsidian-wechat-public-platform/" >【obsidian-wechat-public-platform】</a>进行了简化魔改，以方便我自己的使用。 致敬原作者，欢迎各位到他的 github 页面上打赏, 支持原作者继续开发：` 
+		// );
 		donateText.style.textAlign = "center";
 		donateText.style.width = "70%";
 		donateText.style.margin = "0 auto";
@@ -328,13 +219,6 @@ export class WeChatPublicSettingTab extends PluginSettingTab {
 
 		div.appendChild(containerEl.createEl("br"));
 		const parser = new DOMParser();
-
-		//   div.appendChild(
-		// 	this.createDonateButton(
-		// 	  'https://paypal.me/blakechan',
-		// 	  parser.parseFromString(paypal, 'text/xml').documentElement,
-		// 	),
-		//   );
 
 		div.appendChild(
 			this.createDonateButton(

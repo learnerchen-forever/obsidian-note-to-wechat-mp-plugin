@@ -1,8 +1,7 @@
-import { Token, Tokens, Marked, options, Lexer} from "marked";
+import { Marked, Token, Tokens } from "marked";
 import { markedHighlight } from "marked-highlight";
-import hljs from "highlight.js";
-import {calloutRender} from "./callouts";
 import { bgHighlight } from "./bghighlight";
+import { calloutRender } from "./callouts";
 import { removeWeChatPreCode } from "./code";
 
 

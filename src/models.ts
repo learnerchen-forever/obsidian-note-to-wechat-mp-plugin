@@ -1,4 +1,3 @@
-import { TFile } from 'obsidian';
 
 export interface Articles {
     articles: ArticleElement[];

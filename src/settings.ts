@@ -7,13 +7,6 @@ interface WechatPublicPluginSettings {
 	accessToken: string;
 	lastAccessKeyTime: number
 	isTokenValid: boolean;
-	downloadFolder: string;	// for automatic release using, wechat article save folder
-	noteLocationFolder: string;	// for automatic release using
-	BlacklistFolder: string;
-	BjhJwtToken: string;		// baidu bjh jwt token
-	BjhCookie: string; 			// baidu bjh cookie
-	BjhUserName: string; 			// baidu bjh name
-	BjhAppID: string; 			// baidu bjh appid
 }
 
 const DEFAULT_SETTINGS: WechatPublicPluginSettings = {
@@ -22,13 +15,6 @@ const DEFAULT_SETTINGS: WechatPublicPluginSettings = {
 	accessToken: '',
 	lastAccessKeyTime: -1,
 	isTokenValid: false,
-	downloadFolder: '',
-	noteLocationFolder: '',
-	BlacklistFolder: '',
-	BjhCookie: '',
-	BjhJwtToken: '',
-	BjhUserName: '',
-	BjhAppID: '',
 };
 
 const createSettingsStore = () => {
@@ -73,17 +59,6 @@ const createSettingsStore = () => {
 		});
 	};
 
-	const clearBjhCookie = () => {
-		// console.log('clear bjh cookie and exit.');
-		store.update((state) => {
-			state.BjhCookie = '';
-			state.BjhJwtToken = '';
-			state.BjhAppID = '';
-			state.BjhUserName = '';
-			return state;
-		});
-	};
-
 	const setAccessToken = (accessToken: string) => {
 		store.update((state) => {
 			state.accessToken = accessToken;
@@ -107,71 +82,15 @@ const createSettingsStore = () => {
 		});
 	};
 
-	const setNoteLocationFolder = (value: string) => {
-		store.update((state) => {
-			state.noteLocationFolder = value;
-			return state;
-		});
-	};
-	
-	const setDownloadFolder = (value: string) => {
-		store.update((state) => {
-			state.downloadFolder = value;
-			return state;
-		});
-	};
-	
-	const setBlacklistFolder = (notebookBlacklist: string) => {
-		store.update((state) => {
-			state.BlacklistFolder = notebookBlacklist;
-			return state;
-		});
-	};
-
-	const setBjhCookie = (BjhCookie: string) => {
-		store.update((state) => {
-			state.BjhCookie = BjhCookie;
-			return state;
-		});
-	};
-
-	const setBjhJwtToken = (BjhJwtToken: string) => {
-		store.update((state) => {
-			state.BjhJwtToken = BjhJwtToken;
-			return state;
-		});
-	};
-
-	const setBjhName = (BjhName: string) => {
-		store.update((state) => {
-			state.BjhUserName = BjhName;
-			return state;
-		});
-	};
-
-	const setBjhAppID = (BjhAppID: string) => {
-		store.update((state) => {
-			state.BjhAppID = BjhAppID;
-			return state;
-		});
-	};
 
 	return {
 		subscribe: store.subscribe,
 		initialise,
 		actions: {
-			setNoteLocationFolder,
-			setDownloadFolder,
 			setAccessToken,
 			setAppId,
 			setSecret,
 			clearSecret,
-			clearBjhCookie,
-			setBlacklistFolder,
-			setBjhCookie,
-			setBjhJwtToken,
-			setBjhName,
-			setBjhAppID,
 		}
 	};
 };

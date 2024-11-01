@@ -1,17 +1,15 @@
-import { Notice, requestUrl, request, RequestUrlParam, Platform, FrontMatterCache, TFile, App, Vault, stringifyYaml, FileSystemAdapter, normalizePath, PluginManifest } from 'obsidian';
-import { settingsStore } from './settings';
-import { get } from 'svelte/store';
-import {marked} from 'marked'
-import { basicStyle } from './style/basicStyle';
-import {wechatFormat} from './style/wechatFormat';
-import {codeStyle} from './style/codeStyle';
 import juice from "juice";
 import * as mime from 'mime-types';
-import { NodeHtmlMarkdown, NodeHtmlMarkdownOptions } from 'node-html-markdown'
+import { App, FileSystemAdapter, FrontMatterCache, normalizePath, Notice, PluginManifest, requestUrl, RequestUrlParam, stringifyYaml, TFile } from 'obsidian';
+import { get } from 'svelte/store';
+import { settingsStore } from './settings';
+import { basicStyle } from './style/basicStyle';
+import { codeStyle } from './style/codeStyle';
+import { wechatFormat } from './style/wechatFormat';
 
-import { ArticleElement, Articles, BatchGetMaterial, CoverInfo, MDFrontMatterContent, MediaItem, NewsItem } from './models';
-import { chooseBoundary, isWebp, jsonToUrlEncoded } from 'utils/cookiesUtil';
+import { chooseBoundary } from 'utils/cookiesUtil';
 import { markedParse, ParseOptions } from './markdown/parse';
+import { ArticleElement, Articles, MDFrontMatterContent } from './models';
 import { calloutStyle } from './style/callouts';
 
 export default class ApiManager {
@@ -20,6 +18,7 @@ export default class ApiManager {
 	pluginPath: string;
 	customCssPath: string;
 	customCss: string;
+	notice: Notice | null;
 
 	constructor(app: App, manifest: PluginManifest) {
         this.app = app;
@@ -65,7 +64,7 @@ export default class ApiManager {
 			const cssContent = await this.app.vault.adapter.read(this.customCssPath);
             this.customCss = cssContent;
 			if (cssContent !== "") {
-				new Notice('Custom css activated');
+				// new Notice('Custom css activated');
 			}
 		} catch (error) {
 			this.customCss = "";
@@ -115,7 +114,7 @@ export default class ApiManager {
 
 	public async refreshAccessToken(appid: string, secret: string) : Promise<Boolean> {
         if(appid === '' || secret === '') {
-            new Notice('Please input correct [appid] and [secret]');
+            new Notice('请输入正确的 [appid] 和 [secret]');
             return false;
         }
 
@@ -135,44 +134,45 @@ export default class ApiManager {
                 new Notice(`尝试刷新AccessToken失败, errorCode: ${errcode}, errmsg: ${errmsg}`);
 				return false;
             } else {
-                new Notice('刷新 AccessToken 成功');
+                
+                console.info('刷新 AccessToken 成功');
                 settingsStore.actions.setAccessToken(respAccessToken);
             }
         }
 		return true;
 	}
 
-	public async refreshBJHToken(cookie: string, token: string) : Promise<Boolean> {
-        if(cookie === '' || token === '') {
-            new Notice('Please input correct [cookie] and [token]');
-            return false;
-        }
+	// public async refreshBJHToken(cookie: string, token: string) : Promise<Boolean> {
+    //     if(cookie === '' || token === '') {
+    //         new Notice('Please input correct [cookie] and [token]');
+    //         return false;
+    //     }
 
-		const url = `https://baijiahao.baidu.com/builder/app/appinfo`;
-		let BJHheader:Record<string,string> = this.getBjhHeaders();
-		BJHheader['Cookie'] = cookie;
-		BJHheader['token'] = token;
- 		const req: RequestUrlParam = {
-			url: url,
-			method: 'HEAD',
-			headers: BJHheader
-		};
-		const resp = await requestUrl(req);
-		// console.log(resp.headers);
+	// 	const url = `https://baijiahao.baidu.com/builder/app/appinfo`;
+	// 	let BJHheader:Record<string,string> = this.getBjhHeaders();
+	// 	BJHheader['Cookie'] = cookie;
+	// 	BJHheader['token'] = token;
+ 	// 	const req: RequestUrlParam = {
+	// 		url: url,
+	// 		method: 'HEAD',
+	// 		headers: BJHheader
+	// 	};
+	// 	const resp = await requestUrl(req);
+	// 	// console.log(resp.headers);
 		
-		const respAccessToken: string = resp.headers["token"];
-		if (respAccessToken === undefined) {
-			const errcode = resp.json["errcode"];
-			const errmsg = resp.json["errmsg"];
-			console.error(errmsg);
-			new Notice(`尝试刷新AccessToken失败, errorCode: ${errcode}, errmsg: ${errmsg}`);
-			return false;
-		} else {
-			new Notice('刷新 AccessToken 成功');
-			settingsStore.actions.setBjhJwtToken(respAccessToken);
-		}
-		return true;
-	}
+	// 	const respAccessToken: string = resp.headers["token"];
+	// 	if (respAccessToken === undefined) {
+	// 		const errcode = resp.json["errcode"];
+	// 		const errmsg = resp.json["errmsg"];
+	// 		console.error(errmsg);
+	// 		new Notice(`尝试刷新AccessToken失败, errorCode: ${errcode}, errmsg: ${errmsg}`);
+	// 		return false;
+	// 	} else {
+	// 		new Notice('刷新 AccessToken 成功');
+	// 		settingsStore.actions.setBjhJwtToken(respAccessToken);
+	// 	}
+	// 	return true;
+	// }
 
 	getCustomCssURL() {
         const version = this.manifest.version;
@@ -240,12 +240,15 @@ export default class ApiManager {
 				if (nPath.startsWith("./")) {
 					nPath = nPath.slice(2);
 				}
-				const imgfile = this.app.vault.getAbstractFileByPath(nPath);
+				// const imgfile = this.app.vault.getAbstractFileByPath(nPath);
+				const imgfile = this.app.metadataCache.getFirstLinkpathDest(path, "");
+				console.log(`imgfile:${imgfile}`);
+				
 				if (imgfile instanceof TFile) {
 					const data = await this.app.vault.readBinary(imgfile);
 					blobBytes = data
 				} else {
-					new Notice('Please input correct file relative path in obsidian');
+					new Notice('请输入文件在obsidian中正确的相对路径');
 					return
 				}				
 			}
@@ -256,7 +259,7 @@ export default class ApiManager {
 			formDataString += '--' + boundary + '\r\n';
 			const exts = this.getFileExtent(fileType)
 			if (exts === "no") {
-				new Notice('Not Support, Only supplied type image,video,voice,thumb');
+				new Notice('不支持的文件类型，仅支持 image,video,voice,thumb');
 				return
 			}
 			if (fileType === "video") {
@@ -306,14 +309,16 @@ export default class ApiManager {
 					new Notice(`uploadMaterial, errorCode: ${errcode}, errmsg: ${errmsg}`);
 					return
 				}
-				new Notice(`Success Upload Material media_id ${media_id}.`);
+				// new Notice(`Success Upload Material media_id ${media_id}.`);
+				// new Notice(`素材上传成功 media_id ${media_id}.`);
+				console.info(`素材上传成功 media_id ${media_id}.`);
 				return media_id
 			} else {
 				throw new Error('resrouce is empty,blobBytes, Failed to upload Material');
 			}
 		} catch (e) {
 			new Notice(
-				'Failed to upload Material'
+				'素材上传失败'
 			);
 			console.error('upload Material error' + e);
 		}
@@ -327,41 +332,79 @@ export default class ApiManager {
 				return
 			}
 
+			if (this.notice !== undefined && this.notice){
+				this.notice.hide();
+				this.notice = null
+			}
+			this.notice = new Notice('成功连接【微信公众号平台】，开始上传.....', 0);
 			let thumb_media_id : string | undefined = ""
 			let author = ""; let digest = ""; let content_source_url = ""; let need_open_comment = 0;
+
+			// 解析note的属性
 			if (frontmatter !== undefined) {
+				console.log(`frontmatter: ${JSON.stringify(frontmatter)}`);
+				
+
 				if (only_id === "") {
-					if( frontmatter["thumb_media_id"] !== undefined && frontmatter["thumb_media_id"] !== ""){
+					if( frontmatter["thumb_media_id"] !== undefined && frontmatter["thumb_media_id"]){
 						thumb_media_id = frontmatter["thumb_media_id"]
 					} else {
-						if( frontmatter["banner"] !== undefined && frontmatter["banner"] !== ""){
+						this.notice.setMessage('上传封面图片....')
+						if( frontmatter["banner"] !== undefined && frontmatter["banner"]){
 							thumb_media_id = await this.uploadMaterial(frontmatter["banner"], "image", title+"_banner");
-						} else if( frontmatter["banner_path"] !== undefined && frontmatter["banner_path"] !== ""){
+						} else if( frontmatter["banner_path"] !== undefined && frontmatter["banner_path"]){
+							console.log(`banner_path: ${frontmatter["banner_path"]}`);
 							thumb_media_id = await this.uploadMaterial(frontmatter["banner_path"], "image", title+"_banner");
+						} else if( frontmatter["封面图片"] !== undefined && frontmatter["封面图片"]){
+							console.log(`封面图片: ${frontmatter["封面图片"]}`);
+							thumb_media_id = await this.uploadMaterial(frontmatter["封面图片"], "image", title+"_banner");
 						}
+						this.notice.setMessage('上传封面图片成功')
 					}
 				} else {
 					thumb_media_id = only_id;
 				}
 	
 				if (thumb_media_id === "" && frontmatter["banner"] === undefined && frontmatter["banner_path"] === undefined) {
-					new Notice('Please set banner of article, thumb_media_id, banner, banner_path in file frontManager');
+					new Notice('请在笔记的属性中指定封面图片');
 					return
 				}
-				author = frontmatter["author"];
-				digest = frontmatter["digest"];
-				content_source_url = frontmatter["source_url"];
+				if (frontmatter["title"] !== undefined && frontmatter["title"]) {
+					title = frontmatter["title"];
+				}else if (frontmatter["标题"] !== undefined && frontmatter["标题"]) {
+					title = frontmatter["标题"];
+				}
+				if (frontmatter["原文链接"] !== undefined && frontmatter["原文链接"]) {
+					content_source_url = frontmatter["原文链接"];
+				}else if (frontmatter["source_url"] !== undefined && frontmatter["source_url"]) {
+					content_source_url = frontmatter["source_url"];
+				}
+
+				if (frontmatter["author"] !== undefined && frontmatter["author"]) {
+					author = frontmatter["author"];
+				} else if (frontmatter["作者"] !== undefined && frontmatter["作者"]) {
+					author = frontmatter["作者"];
+				}
+				if (frontmatter["digest"] !== undefined && frontmatter["digest"]) {
+					digest = frontmatter["digest"];
+				} else if (frontmatter["摘要"] !== undefined && frontmatter["摘要"]) {
+					digest = frontmatter["摘要"];
+				}
+				
 				need_open_comment = frontmatter["open_comment"];
 			} else {
 				if (only_id !== "") {
 					thumb_media_id = only_id;
 				} else {
-					new Notice('Please set banner of article, thumb_media_id, banner, banner_path in file frontManager');
+					new Notice('请在笔记的属性中指定封面图片ID');
 					return
 				}
 			}
 			
+			this.notice.setMessage('上传文章中包含的素材....')
 			const MdImagedContent = await this.handleMDImage(filePath, content, 'wx')
+
+			this.notice.setMessage('文章中包含的素材上传成功')
 			// todo: move to other please
 			const parseOptions:ParseOptions = {
 				lineNumber: true,
@@ -406,221 +449,231 @@ export default class ApiManager {
 				new Notice(`newDraft, errorCode: ${errcode}, errmsg: ${errmsg}`);
 				return
 			}
-			new Notice(`Success New draft media_id ${media_id}.`);
+			console.info(`上传文章到公众号草稿箱 media_id ${media_id}.`);
+			if (this.notice){
+				this.notice.hide()
+				this.notice = null
+			}
+			new Notice(`文章成功上传到公众号草稿箱`);
 			return media_id
 		} catch (e) {
+			if (this.notice){
+				this.notice.hide()
+				this.notice = null
+			}
 			new Notice(
-				'Failed to new wechat public draft. Please check your appId, secret and try again.'
+				// 'Failed to new wechat public draft. Please check your appId, secret and try again.'
+				'上传草稿失败，请检查 appId, secret，然后重试'
 			);
 			console.error('new wechat public draft error' + e);
 		}
 	}
 
-	async freepublish(media_id: string): Promise<string |undefined> {
-        try {
-            const setings = get(settingsStore)
-            const pass = await this.refreshAccessToken(setings.appid, setings.secret)
-			if (pass === false) {
-				return
-			}
+	// async freepublish(media_id: string): Promise<string |undefined> {
+    //     try {
+    //         const setings = get(settingsStore)
+    //         const pass = await this.refreshAccessToken(setings.appid, setings.secret)
+	// 		if (pass === false) {
+	// 			return
+	// 		}
 
-			const url = `${this.baseWxUrl}/freepublish/submit?access_token=${setings.accessToken}`;
-            const reqBody = {
-                "media_id": media_id
-            };
-			const req: RequestUrlParam = {
-				url: url,
-				method: 'POST',
-				headers: this.getHeaders(),
-				body: JSON.stringify(reqBody)
-			};
-			const resp = await requestUrl(req);
-            const errorcode = resp.json["errcode"]
-            if ( errorcode !== 0 && errorcode !== undefined) {
-                new Notice(`Failed to free publish. errcode ${errorcode},` + resp.json["errmsg"]);
-				return
-            }
-			new Notice(`Success Release publish_id ${resp.json["publish_id"]}.`);
-			return resp.json["publish_id"];
-		} catch (e) {
-			new Notice(
-				'Failed to free publish. Please check your appId, secret and try again.'
-			);
-			console.error('free publish error' + e);
-		}
-	}
+	// 		const url = `${this.baseWxUrl}/freepublish/submit?access_token=${setings.accessToken}`;
+    //         const reqBody = {
+    //             "media_id": media_id
+    //         };
+	// 		const req: RequestUrlParam = {
+	// 			url: url,
+	// 			method: 'POST',
+	// 			headers: this.getHeaders(),
+	// 			body: JSON.stringify(reqBody)
+	// 		};
+	// 		const resp = await requestUrl(req);
+    //         const errorcode = resp.json["errcode"]
+    //         if ( errorcode !== 0 && errorcode !== undefined) {
+    //             new Notice(`Failed to free publish. errcode ${errorcode},` + resp.json["errmsg"]);
+	// 			return
+    //         }
+	// 		new Notice(`Success Release publish_id ${resp.json["publish_id"]}.`);
+	// 		return resp.json["publish_id"];
+	// 	} catch (e) {
+	// 		new Notice(
+	// 			'Failed to free publish. Please check your appId, secret and try again.'
+	// 		);
+	// 		console.error('free publish error' + e);
+	// 	}
+	// }
 
 	// group send push article to fans
-	async sendAll(media_id: string): Promise<string |undefined> {
-        try {
-            const setings = get(settingsStore)
-            const pass = await this.refreshAccessToken(setings.appid, setings.secret)
-			if (pass === false) {
-				return
-			}
+	// async sendAll(media_id: string): Promise<string |undefined> {
+    //     try {
+    //         const setings = get(settingsStore)
+    //         const pass = await this.refreshAccessToken(setings.appid, setings.secret)
+	// 		if (pass === false) {
+	// 			return
+	// 		}
 
-			const url = `${this.baseWxUrl}/message/mass/sendall?access_token=${setings.accessToken}`;
-            const reqBody = {
-				"filter":{
-				   "is_to_all":true,
-				//    "tag_id":2
-				},
-				"mpnews":{
-				   "media_id": media_id,
-				},
-				 "msgtype":"mpnews",
-				 "send_ignore_reprint":0
-			 };
-			const req: RequestUrlParam = {
-				url: url,
-				method: 'POST',
-				headers: this.getHeaders(),
-				body: JSON.stringify(reqBody)
-			};
-			const resp = await requestUrl(req);
-            const errorcode = resp.json["errcode"]
-            if ( errorcode !== 0 && errorcode !== undefined) {
-                new Notice(`Failed to sending all fans. errcode ${errorcode},` + resp.json["errmsg"]);
-				return
-            }
-			new Notice(`Success Release msg_data_id ${resp.json["msg_data_id"]}.`);
-			return resp.json["msg_data_id"];
-		} catch (e) {
-			new Notice(
-				'Failed to sending all fans. Please check your appId, secret and try again.'
-			);
-			console.error('send all fans error' + e);
-		}
-	}
+	// 		const url = `${this.baseWxUrl}/message/mass/sendall?access_token=${setings.accessToken}`;
+    //         const reqBody = {
+	// 			"filter":{
+	// 			   "is_to_all":true,
+	// 			//    "tag_id":2
+	// 			},
+	// 			"mpnews":{
+	// 			   "media_id": media_id,
+	// 			},
+	// 			 "msgtype":"mpnews",
+	// 			 "send_ignore_reprint":0
+	// 		 };
+	// 		const req: RequestUrlParam = {
+	// 			url: url,
+	// 			method: 'POST',
+	// 			headers: this.getHeaders(),
+	// 			body: JSON.stringify(reqBody)
+	// 		};
+	// 		const resp = await requestUrl(req);
+    //         const errorcode = resp.json["errcode"]
+    //         if ( errorcode !== 0 && errorcode !== undefined) {
+    //             new Notice(`Failed to sending all fans. errcode ${errorcode},` + resp.json["errmsg"]);
+	// 			return
+    //         }
+	// 		new Notice(`Success Release msg_data_id ${resp.json["msg_data_id"]}.`);
+	// 		return resp.json["msg_data_id"];
+	// 	} catch (e) {
+	// 		new Notice(
+	// 			'Failed to sending all fans. Please check your appId, secret and try again.'
+	// 		);
+	// 		console.error('send all fans error' + e);
+	// 	}
+	// }
 
-	async batchGetMaterial(type: string, offset: number, count: number) {
-        try {
-            const setings = get(settingsStore)
-            const pass = await this.refreshAccessToken(setings.appid, setings.secret)
-			if (pass === false || isNaN(offset) || isNaN(count)) {
-				return
-			}
+	// async batchGetMaterial(type: string, offset: number, count: number) {
+    //     try {
+    //         const setings = get(settingsStore)
+    //         const pass = await this.refreshAccessToken(setings.appid, setings.secret)
+	// 		if (pass === false || isNaN(offset) || isNaN(count)) {
+	// 			return
+	// 		}
 
-			const url = `${this.baseWxUrl}/material/batchget_material?access_token=${setings.accessToken}`;
-            const reqBody = {
-				"type": type,
-				"offset":offset,
-				"count":count
-			};
-			const req: RequestUrlParam = {
-				url: url,
-				method: 'POST',
-				headers: this.getHeaders(),
-				body: JSON.stringify(reqBody)
-			};
-			const resp = await requestUrl(req);
-            const errorcode = resp.json["errcode"]
-            if ( errorcode !== 0 && errorcode !== undefined) {
-                new Notice(`Batch Get Material failed. errcode ${errorcode},` + resp.json["errmsg"]);
-				return
-            }
-			const respObj: BatchGetMaterial = JSON.parse(resp.text)
-			let frontmat: MDFrontMatterContent = new MDFrontMatterContent();
-			const nhm = new NodeHtmlMarkdown(
-				/* options (optional) */ {}, 
-				/* customTransformers (optional) */ undefined,
-				/* customCodeBlockTranslators (optional) */ undefined
-			);
-			if(type === "news") {
-				const objItems = respObj.item as NewsItem[]
-				if (objItems.length < 1) {
-					new Notice('No News Data from wechat public');
-				}
-				for (let i = 0; i < objItems.length; i++) {
-					const objItem = objItems[i];
-					const item = objItem.content.news_item[0]
-					const date = new Date(objItem.content.create_time * 1000);
-					const dateString = date.toISOString(); 	
+	// 		const url = `${this.baseWxUrl}/material/batchget_material?access_token=${setings.accessToken}`;
+    //         const reqBody = {
+	// 			"type": type,
+	// 			"offset":offset,
+	// 			"count":count
+	// 		};
+	// 		const req: RequestUrlParam = {
+	// 			url: url,
+	// 			method: 'POST',
+	// 			headers: this.getHeaders(),
+	// 			body: JSON.stringify(reqBody)
+	// 		};
+	// 		const resp = await requestUrl(req);
+    //         const errorcode = resp.json["errcode"]
+    //         if ( errorcode !== 0 && errorcode !== undefined) {
+    //             new Notice(`Batch Get Material failed. errcode ${errorcode},` + resp.json["errmsg"]);
+	// 			return
+    //         }
+	// 		const respObj: BatchGetMaterial = JSON.parse(resp.text)
+	// 		let frontmat: MDFrontMatterContent = new MDFrontMatterContent();
+	// 		const nhm = new NodeHtmlMarkdown(
+	// 			/* options (optional) */ {}, 
+	// 			/* customTransformers (optional) */ undefined,
+	// 			/* customCodeBlockTranslators (optional) */ undefined
+	// 		);
+	// 		if(type === "news") {
+	// 			const objItems = respObj.item as NewsItem[]
+	// 			if (objItems.length < 1) {
+	// 				new Notice('No News Data from wechat public');
+	// 			}
+	// 			for (let i = 0; i < objItems.length; i++) {
+	// 				const objItem = objItems[i];
+	// 				const item = objItem.content.news_item[0]
+	// 				const date = new Date(objItem.content.create_time * 1000);
+	// 				const dateString = date.toISOString(); 	
 					
-					let contentMD = ""
-					let filePath = ""
-					let mdText = ""
-					frontmat.author = item.author
-					frontmat.create_time = dateString
-					frontmat.url = item.url
-					frontmat.media_id = objItem.media_id
-					frontmat.content_source_url = item.content_source_url
-					frontmat.thumb_media_id = item.thumb_media_id
-					frontmat.thumb_url =item.thumb_url
-					contentMD = nhm.translate(item.content);
-					filePath = `${setings.downloadFolder}/${item.title}.md`
-					mdText = this.makeArticleContent(frontmat, contentMD)
-					await this.app.vault.create(filePath, mdText);
-				}
-			} else {
-				const objItem = respObj.item as MediaItem[];
-				const extfile = this.getFileExtent(type)
-				if (extfile === "no") {
-					new Notice(`Not support type format ${type}`);
-					return;
-				}
-				for (let i = 0; i < objItem.length; i++) {
-					const item = objItem[i];
-					let filePath = ""
-					filePath = `${setings.downloadFolder}/${item.name}`
-					const resp = await requestUrl(item.url);
-					this.app.vault.createBinary(filePath, resp.arrayBuffer)
-				}
-			}
-			// console.log(respObj);
-			// return
-			new Notice(`Success batch Get Material`);
-			return;
-		} catch (e) {
-			new Notice(
-				'Failed to batch Get Material. Please check your appId, secret,parameter and try again.'
-			);
-			console.error('Get Material error' + e);
-		}
-	}
+	// 				let contentMD = ""
+	// 				let filePath = ""
+	// 				let mdText = ""
+	// 				frontmat.author = item.author
+	// 				frontmat.create_time = dateString
+	// 				frontmat.url = item.url
+	// 				frontmat.media_id = objItem.media_id
+	// 				frontmat.content_source_url = item.content_source_url
+	// 				frontmat.thumb_media_id = item.thumb_media_id
+	// 				frontmat.thumb_url =item.thumb_url
+	// 				contentMD = nhm.translate(item.content);
+	// 				filePath = `${setings.downloadFolder}/${item.title}.md`
+	// 				mdText = this.makeArticleContent(frontmat, contentMD)
+	// 				await this.app.vault.create(filePath, mdText);
+	// 			}
+	// 		} else {
+	// 			const objItem = respObj.item as MediaItem[];
+	// 			const extfile = this.getFileExtent(type)
+	// 			if (extfile === "no") {
+	// 				new Notice(`Not support type format ${type}`);
+	// 				return;
+	// 			}
+	// 			for (let i = 0; i < objItem.length; i++) {
+	// 				const item = objItem[i];
+	// 				let filePath = ""
+	// 				filePath = `${setings.downloadFolder}/${item.name}`
+	// 				const resp = await requestUrl(item.url);
+	// 				this.app.vault.createBinary(filePath, resp.arrayBuffer)
+	// 			}
+	// 		}
+	// 		// console.log(respObj);
+	// 		// return
+	// 		new Notice(`Success batch Get Material`);
+	// 		return;
+	// 	} catch (e) {
+	// 		new Notice(
+	// 			'Failed to batch Get Material. Please check your appId, secret,parameter and try again.'
+	// 		);
+	// 		console.error('Get Material error' + e);
+	// 	}
+	// }
 
-	async getArticleCover(): Promise< CoverInfo[] | undefined> {
-		try {
-			const setings = get(settingsStore)
-			const pass = await this.refreshAccessToken(setings.appid, setings.secret)
-			if (pass === false) {
-				return undefined
-			}
+// async getArticleCover(): Promise< CoverInfo[] | undefined> {
+// 		try {
+// 			const setings = get(settingsStore)
+// 			const pass = await this.refreshAccessToken(setings.appid, setings.secret)
+// 			if (pass === false) {
+// 				return undefined
+// 			}
 	
-			const url = `${this.baseWxUrl}/material/batchget_material?access_token=${setings.accessToken}`;
-			const reqBody = {
-				"type": "image",
-				"offset":0,
-				"count":20
-			};
-			const req: RequestUrlParam = {
-				url: url,
-				method: 'POST',
-				headers: this.getHeaders(),
-				body: JSON.stringify(reqBody)
-			};
-			const resp = await requestUrl(req);
-			const errorcode = resp.json["errcode"]
-			if ( errorcode !== 0 && errorcode !== undefined) {
-				new Notice(`get Article Cover failed. errcode ${errorcode},` + resp.json["errmsg"]);
-				return undefined
-			}
-			// console.log(resp.text);
-			const respObj: BatchGetMaterial = JSON.parse(resp.text)
-			let images:CoverInfo[] = [];
-			const objItems = respObj.item as MediaItem[]
-			for (let i = 0; i < objItems.length; i++) {
-				const img = objItems[i];
-				images.push(new CoverInfo(img.media_id, img.name));
-			}
-			return images
-		} catch (e) {
-			new Notice(
-				'Failed to get Article Cover. Please check your appId, secret,parameter and try again.'
-			);
-			console.error('Get Material error' + e);
-		}
-	}
+// 			const url = `${this.baseWxUrl}/material/batchget_material?access_token=${setings.accessToken}`;
+// 			const reqBody = {
+// 				"type": "image",
+// 				"offset":0,
+// 				"count":20
+// 			};
+// 			const req: RequestUrlParam = {
+// 				url: url,
+// 				method: 'POST',
+// 				headers: this.getHeaders(),
+// 				body: JSON.stringify(reqBody)
+// 			};
+// 			const resp = await requestUrl(req);
+// 			const errorcode = resp.json["errcode"]
+// 			if ( errorcode !== 0 && errorcode !== undefined) {
+// 				new Notice(`get Article Cover failed. errcode ${errorcode},` + resp.json["errmsg"]);
+// 				return undefined
+// 			}
+// 			// console.log(resp.text);
+// 			const respObj: BatchGetMaterial = JSON.parse(resp.text)
+// 			let images:CoverInfo[] = [];
+// 			const objItems = respObj.item as MediaItem[]
+// 			for (let i = 0; i < objItems.length; i++) {
+// 				const img = objItems[i];
+// 				images.push(new CoverInfo(img.media_id, img.name));
+// 			}
+// 			return images
+// 		} catch (e) {
+// 			new Notice(
+// 				'Failed to get Article Cover. Please check your appId, secret,parameter and try again.'
+// 			);
+// 			console.error('Get Material error' + e);
+// 		}
+// 	}
 
 	async handleMDImage(filePath:string, content: string, to: string): Promise<string> {
 		const imageRegex = /!\[.*?\]\((.*?)\)/g;	// for ![]()
@@ -631,7 +684,7 @@ export default class ApiManager {
 			if (to === 'wx') {
 				responseUrl = await this.uploadImageToWx(filePath, imagePath, "");
 			} else if(to === 'bjh') {
-				responseUrl = await this.uploadImageToBjh(filePath, imagePath, "");
+				// responseUrl = await this.uploadImageToBjh(filePath, imagePath, "");
 			}
 			return {
 				match,
@@ -742,7 +795,8 @@ export default class ApiManager {
 					new Notice(`uploadMaterial, errorCode: ${errcode}, errmsg: ${errmsg}`);
 					return
 				}
-				new Notice(`Success upload Image url ${media_id}.`);
+				// new Notice(`Success upload Image url ${media_id}.`);
+				console.info(`Success upload Image url ${media_id}.`);
 				return media_id
 			} else {
 				// throw new Error('resrouce is empty,blobBytes, Failed to upload image');
@@ -755,205 +809,205 @@ export default class ApiManager {
 		}
 	}
 
-	async uploadImageToBjh(filePath:string, imgpath: string, fileName: string): Promise<string |undefined> {
-        try {
-			const setings = get(settingsStore)
-			let blobBytes: ArrayBuffer | null = null;
-			if (imgpath.startsWith("http")) {
-				const imgresp = await requestUrl(imgpath);
-				blobBytes = imgresp.arrayBuffer
-			} else {
-				let nPath = normalizePath(imgpath);
-				if (nPath.startsWith("./")) {
-					nPath = filePath + nPath.slice(1);
-				}
-				const imgfile = this.app.vault.getAbstractFileByPath(nPath);
-				if (imgfile instanceof TFile) {
-					const data = await this.app.vault.readBinary(imgfile);
-					blobBytes = data
-				} else {
-					new Notice('Please input correct file relative path in obsidian');
-					return
-				}				
-			}
+	// async uploadImageToBjh(filePath:string, imgpath: string, fileName: string): Promise<string |undefined> {
+    //     try {
+	// 		const setings = get(settingsStore)
+	// 		let blobBytes: ArrayBuffer | null = null;
+	// 		if (imgpath.startsWith("http")) {
+	// 			const imgresp = await requestUrl(imgpath);
+	// 			blobBytes = imgresp.arrayBuffer
+	// 		} else {
+	// 			let nPath = normalizePath(imgpath);
+	// 			if (nPath.startsWith("./")) {
+	// 				nPath = filePath + nPath.slice(1);
+	// 			}
+	// 			const imgfile = this.app.vault.getAbstractFileByPath(nPath);
+	// 			if (imgfile instanceof TFile) {
+	// 				const data = await this.app.vault.readBinary(imgfile);
+	// 				blobBytes = data
+	// 			} else {
+	// 				new Notice('Please input correct file relative path in obsidian');
+	// 				return
+	// 			}				
+	// 		}
 
-			const boundary = chooseBoundary()
-			const end_boundary = '\r\n--' + boundary + '--\r\n';
-			let formDataString = '';
-			formDataString += '--' + boundary + '\r\n';
-			formDataString += `Content-Disposition: form-data; name="type"` + '\r\n\r\n' + 'image' + '\r\n';
+	// 		const boundary = chooseBoundary()
+	// 		const end_boundary = '\r\n--' + boundary + '--\r\n';
+	// 		let formDataString = '';
+	// 		formDataString += '--' + boundary + '\r\n';
+	// 		formDataString += `Content-Disposition: form-data; name="type"` + '\r\n\r\n' + 'image' + '\r\n';
 			
-			formDataString += '--' + boundary + '\r\n';
-			formDataString += `Content-Disposition: form-data; name="app_id"` + '\r\n\r\n' + setings.BjhAppID + '\r\n';
-			formDataString += '--' + boundary + '\r\n';
-			formDataString += `Content-Disposition: form-data; name="is_waterlog"` + '\r\n\r\n' + '1' + '\r\n';
-			formDataString += '--' + boundary + '\r\n';
-			formDataString += `Content-Disposition: form-data; name="save_material"` + '\r\n\r\n' + '1' + '\r\n';
-			formDataString += '--' + boundary + '\r\n';
-			formDataString += `Content-Disposition: form-data; name="no_compress"` + '\r\n\r\n' + '0' + '\r\n';
-			formDataString += '--' + boundary + '\r\n';
-			formDataString += `Content-Disposition: form-data; name="is_events"` + '\r\n\r\n' + '\r\n';
-			formDataString += '--' + boundary + '\r\n';
-			formDataString += `Content-Disposition: form-data; name="article_type"` + '\r\n\r\n' + 'news' + '\r\n';
-			formDataString += '--' + boundary + '\r\n';
-			let contentType = mime.contentType(imgpath);
-			if (contentType !== "image/jpeg" && contentType !== "image/png" && contentType !== "image/jpg") {
-				contentType = "image/png";
-			}
-			formDataString += `Content-Disposition: form-data; name="media"; filename=\"${fileName}.png\"` + '\r\n';
-			formDataString += `Content-Type: ${contentType}` + '\r\n\r\n';			
+	// 		formDataString += '--' + boundary + '\r\n';
+	// 		formDataString += `Content-Disposition: form-data; name="app_id"` + '\r\n\r\n' + setings.BjhAppID + '\r\n';
+	// 		formDataString += '--' + boundary + '\r\n';
+	// 		formDataString += `Content-Disposition: form-data; name="is_waterlog"` + '\r\n\r\n' + '1' + '\r\n';
+	// 		formDataString += '--' + boundary + '\r\n';
+	// 		formDataString += `Content-Disposition: form-data; name="save_material"` + '\r\n\r\n' + '1' + '\r\n';
+	// 		formDataString += '--' + boundary + '\r\n';
+	// 		formDataString += `Content-Disposition: form-data; name="no_compress"` + '\r\n\r\n' + '0' + '\r\n';
+	// 		formDataString += '--' + boundary + '\r\n';
+	// 		formDataString += `Content-Disposition: form-data; name="is_events"` + '\r\n\r\n' + '\r\n';
+	// 		formDataString += '--' + boundary + '\r\n';
+	// 		formDataString += `Content-Disposition: form-data; name="article_type"` + '\r\n\r\n' + 'news' + '\r\n';
+	// 		formDataString += '--' + boundary + '\r\n';
+	// 		let contentType = mime.contentType(imgpath);
+	// 		if (contentType !== "image/jpeg" && contentType !== "image/png" && contentType !== "image/jpg") {
+	// 			contentType = "image/png";
+	// 		}
+	// 		formDataString += `Content-Disposition: form-data; name="media"; filename=\"${fileName}.png\"` + '\r\n';
+	// 		formDataString += `Content-Type: ${contentType}` + '\r\n\r\n';			
 			
-			const formDatabuffer = Buffer.from(formDataString, 'utf-8');	// utf8 encode, for chinese
-			let resultArray = Array.from(formDatabuffer);
-			// console.log(formDataString);
-			// return
-			if (blobBytes !== null) {
-				let pic_typedArray = new Uint8Array(blobBytes); // 把buffer转为typed array数据、再转为普通数组使之可以使用数组的方法
-				if (isWebp(pic_typedArray)) {
-					new Notice("not support format image/webp, use the pointed cover");
-					// todo: to be updated later
-					const pointedCover = "https://mmbiz.qpic.cn/mmbiz_jpg/avKRXZvpU06jcDsZoj2IPxLtG08lfq3hvVUianAGoxyc5d3hpsic3CPoRTeiaNBvqr0LaSHcES0x1k1cvwxUVSoxA/0?wx_fmt=jpeg";
-					const imgresp = await requestUrl(pointedCover);
-					pic_typedArray = new Uint8Array(imgresp.arrayBuffer);
-				} 
-				let endBoundaryArray = [];
-				for (let i = 0; i < end_boundary.length; i++) { // 最后取出结束boundary的charCode
-					endBoundaryArray.push(end_boundary.charCodeAt(i));
-				}
-				let postArray = resultArray.concat(Array.prototype.slice.call(pic_typedArray), endBoundaryArray); // 合并文本、图片数据得到最终要发送的数据
-				let post_typedArray = new Uint8Array(postArray); // 把最终结果转为typed array，以便最后取得buffer数据
-				// console.log(post_typedArray)
+	// 		const formDatabuffer = Buffer.from(formDataString, 'utf-8');	// utf8 encode, for chinese
+	// 		let resultArray = Array.from(formDatabuffer);
+	// 		// console.log(formDataString);
+	// 		// return
+	// 		if (blobBytes !== null) {
+	// 			let pic_typedArray = new Uint8Array(blobBytes); // 把buffer转为typed array数据、再转为普通数组使之可以使用数组的方法
+	// 			if (isWebp(pic_typedArray)) {
+	// 				new Notice("not support format image/webp, use the pointed cover");
+	// 				// todo: to be updated later
+	// 				const pointedCover = "https://mmbiz.qpic.cn/mmbiz_jpg/avKRXZvpU06jcDsZoj2IPxLtG08lfq3hvVUianAGoxyc5d3hpsic3CPoRTeiaNBvqr0LaSHcES0x1k1cvwxUVSoxA/0?wx_fmt=jpeg";
+	// 				const imgresp = await requestUrl(pointedCover);
+	// 				pic_typedArray = new Uint8Array(imgresp.arrayBuffer);
+	// 			} 
+	// 			let endBoundaryArray = [];
+	// 			for (let i = 0; i < end_boundary.length; i++) { // 最后取出结束boundary的charCode
+	// 				endBoundaryArray.push(end_boundary.charCodeAt(i));
+	// 			}
+	// 			let postArray = resultArray.concat(Array.prototype.slice.call(pic_typedArray), endBoundaryArray); // 合并文本、图片数据得到最终要发送的数据
+	// 			let post_typedArray = new Uint8Array(postArray); // 把最终结果转为typed array，以便最后取得buffer数据
+	// 			// console.log(post_typedArray)
 
-				const url = `https://baijiahao.baidu.com/pcui/picture/uploadproxy`;
-				const header = {
-					'Content-Type': 'multipart/form-data; boundary=' + boundary,
-					'Accept-Encoding': 'gzip, deflate, br',
-					'Accept': '*/*', 
-					'Connection': 'keep-alive',
-					'Referer': 'https://baijiahao.baidu.com/builder/rc/edit?type=news',
-					"token": setings.BjhJwtToken,
-					"Cookie": setings.BjhCookie,
-				}; 
+	// 			const url = `https://baijiahao.baidu.com/pcui/picture/uploadproxy`;
+	// 			const header = {
+	// 				'Content-Type': 'multipart/form-data; boundary=' + boundary,
+	// 				'Accept-Encoding': 'gzip, deflate, br',
+	// 				'Accept': '*/*', 
+	// 				'Connection': 'keep-alive',
+	// 				'Referer': 'https://baijiahao.baidu.com/builder/rc/edit?type=news',
+	// 				"token": setings.BjhJwtToken,
+	// 				"Cookie": setings.BjhCookie,
+	// 			}; 
 
-				const req: RequestUrlParam = {
-					url: url,
-					method: 'POST',
-					headers: header,
-					body: post_typedArray.buffer,
-				};
-				const resp = await requestUrl(req);
-				const errcode = resp.json["errno"];
-				if (errcode !== 0) {
-					const errmsg = resp.json["errmsg"];
-					console.error(decodeURIComponent(JSON.stringify(resp.json)));
-					new Notice(`uploadMaterial, errorCode: ${errcode}, errmsg: ${errmsg}`);
-					return
-				}
-				const media_id = resp.json["ret"]["https_url"];
-				new Notice(`Success upload Image url ${media_id}.`);
-				return media_id
-			} else {
-				throw new Error('resrouce is empty,blobBytes, Failed to upload image');
-			}
-		} catch (e) {
-			new Notice(
-				'Failed to upload image'
-			);
-			console.error('upload image error' + e);
-		}
-	}
+	// 			const req: RequestUrlParam = {
+	// 				url: url,
+	// 				method: 'POST',
+	// 				headers: header,
+	// 				body: post_typedArray.buffer,
+	// 			};
+	// 			const resp = await requestUrl(req);
+	// 			const errcode = resp.json["errno"];
+	// 			if (errcode !== 0) {
+	// 				const errmsg = resp.json["errmsg"];
+	// 				console.error(decodeURIComponent(JSON.stringify(resp.json)));
+	// 				new Notice(`uploadMaterial, errorCode: ${errcode}, errmsg: ${errmsg}`);
+	// 				return
+	// 			}
+	// 			const media_id = resp.json["ret"]["https_url"];
+	// 			new Notice(`Success upload Image url ${media_id}.`);
+	// 			return media_id
+	// 		} else {
+	// 			throw new Error('resrouce is empty,blobBytes, Failed to upload image');
+	// 		}
+	// 	} catch (e) {
+	// 		new Notice(
+	// 			'Failed to upload image'
+	// 		);
+	// 		console.error('upload image error' + e);
+	// 	}
+	// }
 
-	async publishToBjh(filePath: string, title: string, content: string, frontmatter: FrontMatterCache): Promise<string |undefined> {
-        try {
-			const setings = get(settingsStore);
-			await this.refreshBJHToken(setings.BjhCookie, setings.BjhJwtToken);
+	// async publishToBjh(filePath: string, title: string, content: string, frontmatter: FrontMatterCache): Promise<string |undefined> {
+    //     try {
+	// 		const setings = get(settingsStore);
+	// 		await this.refreshBJHToken(setings.BjhCookie, setings.BjhJwtToken);
 			
-			let BjhHeader: Record<string, string> = this.getBjhHeaders();
-			BjhHeader["content-type"] = "application/x-www-form-urlencoded";
-			BjhHeader["Referer"] = "https://baijiahao.baidu.com/builder/rc/edit?type=news";
-			BjhHeader["token"] = setings.BjhJwtToken;
-			BjhHeader["Cookie"] = setings.BjhCookie;
+	// 		let BjhHeader: Record<string, string> = this.getBjhHeaders();
+	// 		BjhHeader["content-type"] = "application/x-www-form-urlencoded";
+	// 		BjhHeader["Referer"] = "https://baijiahao.baidu.com/builder/rc/edit?type=news";
+	// 		BjhHeader["token"] = setings.BjhJwtToken;
+	// 		BjhHeader["Cookie"] = setings.BjhCookie;
 
-			let cover_media_url : string | undefined = ""
-			let author = ""; let digest = "";
-			if (frontmatter !== undefined) {
-				if( frontmatter["banner"] !== undefined && frontmatter["banner"] !== ""){
-					cover_media_url = await this.uploadImageToBjh(filePath, frontmatter["banner"], title+"_banner");
-				} else if( frontmatter["banner_path"] !== undefined && frontmatter["banner_path"] !== ""){
-					cover_media_url = await this.uploadImageToBjh(filePath, frontmatter["banner_path"], title+"_banner");
-				}
+	// 		let cover_media_url : string | undefined = ""
+	// 		let author = ""; let digest = "";
+	// 		if (frontmatter !== undefined) {
+	// 			if( frontmatter["banner"] !== undefined && frontmatter["banner"] !== ""){
+	// 				cover_media_url = await this.uploadImageToBjh(filePath, frontmatter["banner"], title+"_banner");
+	// 			} else if( frontmatter["banner_path"] !== undefined && frontmatter["banner_path"] !== ""){
+	// 				cover_media_url = await this.uploadImageToBjh(filePath, frontmatter["banner_path"], title+"_banner");
+	// 			}
 
-				if (cover_media_url === "" && frontmatter["banner"] === undefined && frontmatter["banner_path"] === undefined) {
-					new Notice('Please set banner of article, thumb_media_id, banner, banner_path in file frontManager');
-					return
-				}
-				author = frontmatter["author"];
-				digest = frontmatter["digest"];
-			} else {
-				new Notice('Please set banner of article, banner, banner_path in file frontManager');
-				return
-			}
-			const MdImagedContent = await this.handleMDImage(filePath, content, 'bjh')
-			const htmlText = await marked.parse(MdImagedContent)
-			const htmlText1 = this.formatCodeHTML(htmlText)
-			const htmlText2 = this.solveHTML(`<section id="nice">` + htmlText1 +`</section>`) + `<img src="${cover_media_url}"><br>`
-			// console.log(htmlText2);
-			// return
+	// 			if (cover_media_url === "" && frontmatter["banner"] === undefined && frontmatter["banner_path"] === undefined) {
+	// 				new Notice('Please set banner of article, thumb_media_id, banner, banner_path in file frontManager');
+	// 				return
+	// 			}
+	// 			author = frontmatter["author"];
+	// 			digest = frontmatter["digest"];
+	// 		} else {
+	// 			new Notice('Please set banner of article, banner, banner_path in file frontManager');
+	// 			return
+	// 		}
+	// 		const MdImagedContent = await this.handleMDImage(filePath, content, 'bjh')
+	// 		const htmlText = await marked.parse(MdImagedContent)
+	// 		const htmlText1 = this.formatCodeHTML(htmlText)
+	// 		const htmlText2 = this.solveHTML(`<section id="nice">` + htmlText1 +`</section>`) + `<img src="${cover_media_url}"><br>`
+	// 		// console.log(htmlText2);
+	// 		// return
 
-			const url = `https://baijiahao.baidu.com/pcui/article/publish?callback=bjhpublish`;
-            const cover_images = [{
-				"src": cover_media_url!,
-				"cropData": {"x":0,"y":0,"width":2048,"height":1365},
-				"machine_chooseimg":0,
-				"isLegal":1
-			}];
+	// 		const url = `https://baijiahao.baidu.com/pcui/article/publish?callback=bjhpublish`;
+    //         const cover_images = [{
+	// 			"src": cover_media_url!,
+	// 			"cropData": {"x":0,"y":0,"width":2048,"height":1365},
+	// 			"machine_chooseimg":0,
+	// 			"isLegal":1
+	// 		}];
 
-            const cover_images_map = [{ "src": cover_media_url!, }];
-			const reqBody = {
-				"type": "news",
-                "title": title,
-                "author": author,
-                "abstract": digest,
-                "content": htmlText2,
-				"auto_mount_goods": "1",
-				"len": htmlText2.length.toString(),
-                "vertical_cover": cover_media_url!,
-                "cover_images": JSON.stringify(cover_images),
-                "_cover_images_map": JSON.stringify(cover_images_map),
-            };
-			const activityList = `&activity_list%5B0%5D%5Bid%5D=408&activity_list%5B0%5D%5Bis_checked%5D=0&activity_list%5B1%5D%5Bid%5D=ttv&activity_list%5B1%5D%5Bis_checked%5D=1&activity_list%5B2%5D%5Bid%5D=reward&activity_list%5B2%5D%5Bis_checked%5D=1&activity_list%5B3%5D%5Bid%5D=aigc_bjh_status&activity_list%5B3%5D%5Bis_checked%5D=0&source_reprinted_allow=0&abstract_from=2&isBeautify=false&usingImgFilter=false&cover_layout=one`;
-			const postStr = `&source=upload&cover_source=upload&subtitle=&bjhtopic_id=&bjhtopic_info=&clue=1&bjhmt=&order_id=&aigc_rebuild=&image_edit_point=%5B%7B%22img_type%22%3A%22cover%22%2C%22img_num%22%3A%7B%22template%22%3A0%2C%22font%22%3A0%2C%22filter%22%3A0%2C%22paster%22%3A0%2C%22cut%22%3A0%2C%22any%22%3A0%7D%7D%2C%7B%22img_type%22%3A%22body%22%2C%22img_num%22%3A%7B%22template%22%3A0%2C%22font%22%3A0%2C%22filter%22%3A0%2C%22paster%22%3A0%2C%22cut%22%3A0%2C%22any%22%3A0%7D%7D%5D`
-			const bodyContent = jsonToUrlEncoded(reqBody) + activityList + postStr;
-			const req: RequestUrlParam = {
-				url: url,
-				method: 'POST',
-				headers: BjhHeader,
-				body: bodyContent,
-			};
+    //         const cover_images_map = [{ "src": cover_media_url!, }];
+	// 		const reqBody = {
+	// 			"type": "news",
+    //             "title": title,
+    //             "author": author,
+    //             "abstract": digest,
+    //             "content": htmlText2,
+	// 			"auto_mount_goods": "1",
+	// 			"len": htmlText2.length.toString(),
+    //             "vertical_cover": cover_media_url!,
+    //             "cover_images": JSON.stringify(cover_images),
+    //             "_cover_images_map": JSON.stringify(cover_images_map),
+    //         };
+	// 		const activityList = `&activity_list%5B0%5D%5Bid%5D=408&activity_list%5B0%5D%5Bis_checked%5D=0&activity_list%5B1%5D%5Bid%5D=ttv&activity_list%5B1%5D%5Bis_checked%5D=1&activity_list%5B2%5D%5Bid%5D=reward&activity_list%5B2%5D%5Bis_checked%5D=1&activity_list%5B3%5D%5Bid%5D=aigc_bjh_status&activity_list%5B3%5D%5Bis_checked%5D=0&source_reprinted_allow=0&abstract_from=2&isBeautify=false&usingImgFilter=false&cover_layout=one`;
+	// 		const postStr = `&source=upload&cover_source=upload&subtitle=&bjhtopic_id=&bjhtopic_info=&clue=1&bjhmt=&order_id=&aigc_rebuild=&image_edit_point=%5B%7B%22img_type%22%3A%22cover%22%2C%22img_num%22%3A%7B%22template%22%3A0%2C%22font%22%3A0%2C%22filter%22%3A0%2C%22paster%22%3A0%2C%22cut%22%3A0%2C%22any%22%3A0%7D%7D%2C%7B%22img_type%22%3A%22body%22%2C%22img_num%22%3A%7B%22template%22%3A0%2C%22font%22%3A0%2C%22filter%22%3A0%2C%22paster%22%3A0%2C%22cut%22%3A0%2C%22any%22%3A0%7D%7D%5D`
+	// 		const bodyContent = jsonToUrlEncoded(reqBody) + activityList + postStr;
+	// 		const req: RequestUrlParam = {
+	// 			url: url,
+	// 			method: 'POST',
+	// 			headers: BjhHeader,
+	// 			body: bodyContent,
+	// 		};
 
-			const resp = await requestUrl(req);
-			const errcode = resp.json["errno"];
-			if (errcode !== 0) {
-				const errcode = resp.json["errno"];
-				const errmsg = resp.json["errmsg"];
-				console.error(errmsg);
-				// console.log("resp = " + decodeURIComponent(JSON.stringify(resp.json)));
-				new Notice(`newDraft, errorCode: ${errcode}, errmsg: ${errmsg}`);
-				return
-			}
-			const media_id = resp.json["ret"]["url"];
-			if (resp.headers['token'] !== '') {
-				settingsStore.actions.setBjhJwtToken(resp.headers['token']);
-			}
-			new Notice(`Success publish article media_id ${media_id}.`);
-			return media_id
-		} catch (e) {
-			new Notice(
-				'Failed to publish to baidu bjh. Please check your appId, secret and try again.'
-			);
-			console.error('publish to baidu bjh error' + e);
-		}
-	}
+	// 		const resp = await requestUrl(req);
+	// 		const errcode = resp.json["errno"];
+	// 		if (errcode !== 0) {
+	// 			const errcode = resp.json["errno"];
+	// 			const errmsg = resp.json["errmsg"];
+	// 			console.error(errmsg);
+	// 			// console.log("resp = " + decodeURIComponent(JSON.stringify(resp.json)));
+	// 			new Notice(`newDraft, errorCode: ${errcode}, errmsg: ${errmsg}`);
+	// 			return
+	// 		}
+	// 		const media_id = resp.json["ret"]["url"];
+	// 		if (resp.headers['token'] !== '') {
+	// 			settingsStore.actions.setBjhJwtToken(resp.headers['token']);
+	// 		}
+	// 		new Notice(`Success publish article media_id ${media_id}.`);
+	// 		return media_id
+	// 	} catch (e) {
+	// 		new Notice(
+	// 			'Failed to publish to baidu bjh. Please check your appId, secret and try again.'
+	// 		);
+	// 		console.error('publish to baidu bjh error' + e);
+	// 	}
+	// }
 
 	public makeArticleContent(frontMatter: MDFrontMatterContent, markdownContent: string) {
 		const frontMatterStr = stringifyYaml(frontMatter);

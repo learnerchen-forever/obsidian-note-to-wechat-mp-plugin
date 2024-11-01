@@ -1,5 +1,5 @@
-import { Cookie } from 'set-cookie-parser';
 import * as crypto from "crypto";
+import { Cookie } from 'set-cookie-parser';
 
 export const parseCookies = (cookieInput: string): Cookie[] => {
 	if (cookieInput === '') {

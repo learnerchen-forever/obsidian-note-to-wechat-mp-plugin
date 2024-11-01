@@ -6,7 +6,7 @@ on:
       - "*"
 
 env:
-  PLUGIN_NAME: obsidian-wechat-public-plugin
+  PLUGIN_NAME: obsidian-note-to-wechat-mp-plugin
 
 jobs:
   build:

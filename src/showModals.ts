@@ -1,4 +1,4 @@
-import { App, Modal, Setting, AbstractInputSuggest, Menu, SuggestModal, TFile} from "obsidian";
+import { AbstractInputSuggest, App, Modal, Setting, SuggestModal, TFile } from "obsidian";
 import { CoverInfo } from "./models";
 class WeChatUploadMaterialModal extends Modal {
     path: string;
@@ -389,4 +389,4 @@ class MultiSuggest extends AbstractInputSuggest<string> {
   }
 }
 
-export { OpenFileModal, WarningModal, WeChatDownloadMaterialModal, WeChatUploadMaterialModal, CoverIDSuggestModal, YoutubeDownloadModal, FileSuggestModal, MultiSuggest };
+export { CoverIDSuggestModal, FileSuggestModal, MultiSuggest, OpenFileModal, WarningModal, WeChatDownloadMaterialModal, WeChatUploadMaterialModal, YoutubeDownloadModal };
