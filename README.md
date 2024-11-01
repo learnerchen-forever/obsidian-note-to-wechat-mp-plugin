@@ -9,7 +9,7 @@
 [ZH 中文](./README-zh.md) 
 
 
-The [Obsidian](https://obsidian.md/) Wechat MP Draft  Plugin is an obsidian community plug-in for send note to WeChat MP platform as draft for future editing or publishing.
+The [Obsidian](https://obsidian.md/) Wechat MP Draft  Plugin is an obsidian community plug-in for sending note to WeChat MP platform as draft for future editing or publishing.
 
 
 ## Origianl Plugin
@@ -36,7 +36,7 @@ https://github.com/learnerchen-forever/obsidian-note-to-wechat-mp-plugin/release
 
 Directly search for `Wechat MP Draft` in the plug-in market,  to install it. After the installation is complete, click `Enable` to enable the plug-in. [png]
 
-Second method is download the [release](https://github.com/learnerchen-forever/obsidian-note-to-wechat-mp-plugin/releases) package, and save it to newly created folder (could be named as "wechat-mp-draft-plugin", e.g.) under .obsidian/plugin. refresh the installed plugin list, and enable it. 
+The other way is to download the [release](https://github.com/learnerchen-forever/obsidian-note-to-wechat-mp-plugin/releases) package, and save it to newly created folder (could be named as "wechat-mp-draft-plugin", e.g.) under .obsidian/plugin. refresh the installed plugin list, and enable it. 
 
 
 ## Uasage
