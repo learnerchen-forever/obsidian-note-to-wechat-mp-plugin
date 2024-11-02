@@ -12,7 +12,7 @@
 The [Obsidian](https://obsidian.md/) WeChat MP Draft  Plugin is an obsidian community plug-in for sending note to WeChat MP platform as draft for future editing or publishing.
 
 
-## Origianl Plugin
+## Original Plugin
 
 The plugin is based on https://github.com/ai-chen2050/obsidian-wechat-public-platform, It is a very creative product. 
 
