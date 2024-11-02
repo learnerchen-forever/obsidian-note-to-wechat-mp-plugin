@@ -1,10 +1,10 @@
 # Obsidian WeChat MP Draft Plugin
 
-[![](https://github.com/learnerchen-forever/obsidian-note-to-wechat-mp-plugin/actions/workflows/CI.yml/badge.svg)](https://github.com/learnerchen-forever/obsidian-note-to-wechat-mp-plugin/actions/workflows/CI.yml)
-[![Release Obsidian plugin](https://github.com/learnerchen-forever/obsidian-note-to-wechat-mp-plugin/actions/workflows/release.yml/badge.svg)](https://github.com/learnerchen-forever/obsidian-note-to-wechat-mp-plugin/actions/workflows/release.yml)
-[![GitHub license](https://badgen.net/github/license/Naereen/Strapdown.js)](https://github.com/learnerchen-forever/obsidian-note-to-wechat-mp-plugin/blob/master/LICENSE)
-[![Github all releases](https://img.shields.io/github/downloads/learnerchen-forever/obsidian-note-to-wechat-mp-plugin/total.svg)](https://github.com/learnerchen-forever/obsidian-note-to-wechat-mp-plugin/releases/)
-[![GitLab latest release](https://badgen.net/github/release/learnerchen-forever/obsidian-note-to-wechat-mp-plugin/)](https://github.com/learnerchen-forever/obsidian-note-to-wechat-mp-plugin/releases)
+[![](https://github.com/learnerchen-forever/wechat-mp-draft/actions/workflows/CI.yml/badge.svg)](https://github.com/learnerchen-forever/wechat-mp-draft/actions/workflows/CI.yml)
+[![Release Obsidian plugin](https://github.com/learnerchen-forever/wechat-mp-draft/actions/workflows/release.yml/badge.svg)](https://github.com/learnerchen-forever/wechat-mp-draft/actions/workflows/release.yml)
+[![GitHub license](https://badgen.net/github/license/Naereen/Strapdown.js)](https://github.com/learnerchen-forever/wechat-mp-draft/blob/master/LICENSE)
+[![Github all releases](https://img.shields.io/github/downloads/learnerchen-forever/wechat-mp-draft/total.svg)](https://github.com/learnerchen-forever/wechat-mp-draft/releases/)
+[![GitLab latest release](https://badgen.net/github/release/learnerchen-forever/wechat-mp-draft/)](https://github.com/learnerchen-forever/wechat-mp-draft/releases)
 
 [EN 英文](./README.md) 
 
@@ -22,7 +22,7 @@
 
 
 ## 版本历史
-https://github.com/learnerchen-forever/obsidian-note-to-wechat-mp-plugin/releases
+https://github.com/learnerchen-forever/wechat-mp-draft/releases
 
 ## 功能
 
@@ -36,7 +36,7 @@ https://github.com/learnerchen-forever/obsidian-note-to-wechat-mp-plugin/release
 
 在obsidian的社区插件市场上搜 `Wechat MP Draft`，然后`安装`,  `启用` [png]
 
-第二种方法是下载[release](https://github.com/learnerchen-forever/obsidian-note-to-wechat-mp-plugin/releases) 包, 保存到`.obsidian/plugin`下新建的文件夹中，(可以命名为 "wechat-mp-draft-plugin") 刷新obsidian已安装的插件列表，选择`启用`
+第二种方法是下载[release](https://github.com/learnerchen-forever/wechat-mp-draft/releases) 包, 保存到`.obsidian/plugin`下新建的文件夹中，(可以命名为 "wechat-mp-draft-plugin") 刷新obsidian已安装的插件列表，选择`启用`
 
 
 
