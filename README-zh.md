@@ -1,4 +1,4 @@
-# Obsidian Wechat MP Draft Plugin
+# Obsidian WeChat MP Draft Plugin
 
 [![](https://github.com/learnerchen-forever/obsidian-note-to-wechat-mp-plugin/actions/workflows/CI.yml/badge.svg)](https://github.com/learnerchen-forever/obsidian-note-to-wechat-mp-plugin/actions/workflows/CI.yml)
 [![Release Obsidian plugin](https://github.com/learnerchen-forever/obsidian-note-to-wechat-mp-plugin/actions/workflows/release.yml/badge.svg)](https://github.com/learnerchen-forever/obsidian-note-to-wechat-mp-plugin/actions/workflows/release.yml)
@@ -9,7 +9,7 @@
 [EN 英文](./README.md) 
 
 
-[Obsidian](https://obsidian.md/) Wechat MP Draft  Plugin 是一个obsidian社区插件，用于把笔记发送到微信公众号的草稿箱中，进一步编辑或发布。
+[Obsidian](https://obsidian.md/) WeChat MP Draft  Plugin 是一个obsidian社区插件，用于把笔记发送到微信公众号的草稿箱中，进一步编辑或发布。
 
 
 ## 原来的插件

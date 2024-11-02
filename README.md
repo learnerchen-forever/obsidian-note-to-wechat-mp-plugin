@@ -1,4 +1,4 @@
-# Obsidian Wechat MP Draft Plugin
+# Obsidian WeChat MP Draft Plugin
 
 [![](https://github.com/learnerchen-forever/obsidian-note-to-wechat-mp-plugin/actions/workflows/CI.yml/badge.svg)](https://github.com/learnerchen-forever/obsidian-note-to-wechat-mp-plugin/actions/workflows/CI.yml)
 [![Release Obsidian plugin](https://github.com/learnerchen-forever/obsidian-note-to-wechat-mp-plugin/actions/workflows/release.yml/badge.svg)](https://github.com/learnerchen-forever/obsidian-note-to-wechat-mp-plugin/actions/workflows/release.yml)
@@ -9,7 +9,7 @@
 [ZH 中文](./README-zh.md) 
 
 
-The [Obsidian](https://obsidian.md/) Wechat MP Draft  Plugin is an obsidian community plug-in for sending note to WeChat MP platform as draft for future editing or publishing.
+The [Obsidian](https://obsidian.md/) WeChat MP Draft  Plugin is an obsidian community plug-in for sending note to WeChat MP platform as draft for future editing or publishing.
 
 
 ## Origianl Plugin
