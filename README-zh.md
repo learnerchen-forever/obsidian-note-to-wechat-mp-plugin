@@ -34,7 +34,7 @@ https://github.com/learnerchen-forever/wechat-mp-draft/releases
 
 ## 安装
 
-在obsidian的社区插件市场上搜 `Wechat MP Draft`，然后`安装`,  `启用` [png]
+在obsidian的社区插件市场上搜 `WeChat MP Draft`，然后`安装`,  `启用` [png]
 
 第二种方法是下载[release](https://github.com/learnerchen-forever/wechat-mp-draft/releases) 包, 保存到`.obsidian/plugin`下新建的文件夹中，(可以命名为 "wechat-mp-draft-plugin") 刷新obsidian已安装的插件列表，选择`启用`
 

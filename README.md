@@ -34,7 +34,7 @@ https://github.com/learnerchen-forever/wechat-mp-draft/releases
 
 ## Install
 
-Directly search for `Wechat MP Draft` in the plug-in market,  to install it. After the installation is complete, click `Enable` to enable the plug-in. [png]
+Directly search for `WeChat MP Draft` in the plug-in market,  to install it. After the installation is complete, click `Enable` to enable the plug-in. [png]
 
 The other way is to download the [release](https://github.com/learnerchen-forever/wechat-mp-draft/releases) package, and save it to newly created folder (could be named as "wechat-mp-draft-plugin", e.g.) under .obsidian/plugin. refresh the installed plugin list, and enable it. 
 
