@@ -1,6 +1,6 @@
 {
-	"id": "wechat-mp-draft",
-	"name": "Wechat MP Draft",
+	"id": "obsidian-note-to-wechat-mp-plugin",
+	"name": "WeChat MP Draft",
 	"version": "1.0.0",
 	"minAppVersion": "0.16.0",
 	"description": "Sent the note to WeChat MP as draft",
